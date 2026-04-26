@@ -35,7 +35,6 @@ public class BffUsuarioResource {
         if (!validation.isValido()) {
             throw new WebApplicationException("Token inválido", 401);
         }
-
         UUID usuarioId = validation.getUsuarioId();
 
         return usersClient.getById(usuarioId);
