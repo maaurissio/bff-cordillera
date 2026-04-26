@@ -5,6 +5,7 @@ import cl.duoc.cordillera.client.UsersClient;
 import cl.duoc.cordillera.dto.TokenValidationResponseDTO;
 import cl.duoc.cordillera.dto.UsuarioResponseDTO;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -26,6 +27,7 @@ public class BffUsuarioResource {
 
     @GET
     @Path("/me")
+    @SecurityRequirement(name = "BearerAuth")
     public UsuarioResponseDTO getPerfil(@HeaderParam("Authorization") String authHeader) {
 
         TokenValidationResponseDTO validation = authClient.validate(authHeader);
