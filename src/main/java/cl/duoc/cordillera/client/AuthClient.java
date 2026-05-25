@@ -1,5 +1,6 @@
 package cl.duoc.cordillera.client;
 
+import cl.duoc.cordillera.dto.RegisterRequestDTO;
 import cl.duoc.cordillera.dto.TokenValidationResponseDTO;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -10,6 +11,10 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface AuthClient {
+
+    @POST
+    @Path("/register")
+    void register(RegisterRequestDTO request);
 
     @POST
     @Path("/validate")

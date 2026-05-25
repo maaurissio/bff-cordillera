@@ -1,16 +1,11 @@
 package cl.duoc.cordillera.dto;
 
-import java.util.List;
-import java.util.UUID;
+public class BffUsuarioRegisterRequestDTO {
 
-public class UsuarioResponseDTO {
-
-    public UUID id;
     public String rut;
     public String dv;
     public String nombre;
     public String apellido;
     public String email;
-
-    public List<String> roles;
+    public String password;
 }
