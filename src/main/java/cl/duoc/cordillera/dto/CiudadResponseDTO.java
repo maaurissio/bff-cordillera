@@ -2,13 +2,10 @@ package cl.duoc.cordillera.dto;
 
 import java.util.UUID;
 
-public class SucursalResponseDTO {
+public class CiudadResponseDTO {
 
     public UUID id;
     public String nombre;
-    public String direccion;
-    public UUID ciudadId;
-    public String ciudad;
     public UUID regionId;
     public String region;
 }

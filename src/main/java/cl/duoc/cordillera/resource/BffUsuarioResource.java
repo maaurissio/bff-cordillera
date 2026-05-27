@@ -1,6 +1,7 @@
 package cl.duoc.cordillera.resource;
 
 import cl.duoc.cordillera.client.AuthClient;
+import cl.duoc.cordillera.client.UsuarioSucursalesClient;
 import cl.duoc.cordillera.client.UsersClient;
 import cl.duoc.cordillera.dto.*;
 import jakarta.inject.Inject;
@@ -13,7 +14,9 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Path("/bff/usuarios")
 @Produces(MediaType.APPLICATION_JSON)
@@ -28,6 +31,10 @@ public class BffUsuarioResource {
     @RestClient
     UsersClient usersClient;
 
+    @Inject
+    @RestClient
+    UsuarioSucursalesClient usuarioSucursalesClient;
+
     @POST
     @Path("/register")
     public Response register(BffUsuarioRegisterRequestDTO request) {
@@ -41,8 +48,8 @@ public class BffUsuarioResource {
         userRequest.nombre = request.nombre;
         userRequest.apellido = request.apellido;
         userRequest.email = request.email;
-        userRequest.telefono = "";
-        userRequest.fechaNacimiento = null;
+        userRequest.telefono = request.telefono;
+        userRequest.fechaNacimiento = request.fechaNacimiento;
 
         UsuarioResponseDTO creado;
         try {
@@ -71,7 +78,15 @@ public class BffUsuarioResource {
             throw new WebApplicationException("No fue posible registrar credenciales", 502);
         }
 
-        return Response.status(Response.Status.CREATED).entity(creado).build();
+        try {
+            syncUserSucursales(creado.id, request.sucursalIds);
+        } catch (WebApplicationException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new WebApplicationException("No fue posible asignar sucursales al usuario", 502);
+        }
+
+        return Response.status(Response.Status.CREATED).entity(usersClient.getById(creado.id)).build();
     }
 
     @GET
@@ -92,9 +107,18 @@ public class BffUsuarioResource {
     @PUT
     @Path("/{id}")
     @SecurityRequirement(name = "BearerAuth")
-    public UsuarioResponseDTO update(@HeaderParam("Authorization") String authHeader, @PathParam("id") UUID id, UsuarioUpdateRequestDTO request) {
+    public UsuarioResponseDTO update(@HeaderParam("Authorization") String authHeader, @PathParam("id") UUID id, BffUsuarioUpdateRequestDTO request) {
         validarToken(authHeader);
-        return usersClient.update(id, request);
+        UsuarioUpdateRequestDTO updateRequest = new UsuarioUpdateRequestDTO();
+        updateRequest.nombre = request.nombre;
+        updateRequest.apellido = request.apellido;
+        updateRequest.email = request.email;
+        updateRequest.telefono = request.telefono;
+        updateRequest.fechaNacimiento = request.fechaNacimiento;
+
+        UsuarioResponseDTO updated = usersClient.update(id, updateRequest);
+        syncUserSucursales(id, request.sucursalIds);
+        return usersClient.getById(updated.id);
     }
 
     @PUT
@@ -132,5 +156,35 @@ public class BffUsuarioResource {
         if (!validation.isValido()) {
             throw new WebApplicationException("Token inválido", 401);
         }
+    }
+
+    private void syncUserSucursales(UUID usuarioId, List<UUID> sucursalIds) {
+        Set<UUID> desiredIds = sanitizeIds(sucursalIds);
+        List<UsuarioSucursalResponseDTO> currentAssignments = usuarioSucursalesClient.getByUsuario(usuarioId);
+
+        for (UsuarioSucursalResponseDTO assignment : currentAssignments) {
+            if (!desiredIds.contains(assignment.sucursalId)) {
+                usuarioSucursalesClient.desactivar(assignment.id);
+            }
+        }
+
+        Set<UUID> currentIds = currentAssignments.stream()
+                .map(assignment -> assignment.sucursalId)
+                .collect(Collectors.toSet());
+
+        for (UUID sucursalId : desiredIds) {
+            if (currentIds.contains(sucursalId)) continue;
+            UsuarioSucursalRequestDTO request = new UsuarioSucursalRequestDTO();
+            request.usuarioId = usuarioId;
+            request.sucursalId = sucursalId;
+            usuarioSucursalesClient.create(request);
+        }
+    }
+
+    private Set<UUID> sanitizeIds(List<UUID> ids) {
+        if (ids == null) return Set.of();
+        return ids.stream()
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
     }
 }

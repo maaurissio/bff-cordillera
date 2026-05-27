@@ -4,15 +4,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public class BffUsuarioRegisterRequestDTO {
+public class BffUsuarioUpdateRequestDTO {
 
-    public String rut;
-    public String dv;
     public String nombre;
     public String apellido;
     public String email;
     public String telefono;
     public LocalDate fechaNacimiento;
-    public String password;
     public List<UUID> sucursalIds;
 }

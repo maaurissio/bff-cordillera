@@ -1,0 +1,14 @@
+package cl.duoc.cordillera.dto;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public class UsuarioSucursalResponseDTO {
+
+    public UUID id;
+    public UUID usuarioId;
+    public String nombreUsuario;
+    public UUID sucursalId;
+    public String nombreSucursal;
+    public LocalDateTime asignadoEn;
+}
